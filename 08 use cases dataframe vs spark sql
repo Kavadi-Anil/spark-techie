@@ -1,0 +1,236 @@
+# 📌 Create sample orders_df DataFrame in PySpark
+
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType, TimestampType
+from datetime import datetime
+
+spark = SparkSession.builder.getOrCreate()
+
+# Define schema
+schema = StructType([
+    StructField("order_id", IntegerType(), True),
+    StructField("order_date", TimestampType(), True),
+    StructField("customer_id", IntegerType(), True),
+    StructField("order_status", StringType(), True)
+])
+
+# Create sample data (20 rows)
+data = [
+    (1, datetime(2013, 7, 25, 0, 0), 11599, "CLOSED"),
+    (2, datetime(2013, 7, 25, 0, 0), 256, "PENDING_PAYMENT"),
+    (3, datetime(2013, 7, 25, 0, 0), 12111, "COMPLETE"),
+    (4, datetime(2013, 7, 25, 0, 0), 8827, "CLOSED"),
+    (5, datetime(2013, 7, 25, 0, 0), 11318, "COMPLETE"),
+    (6, datetime(2013, 7, 25, 0, 0), 7130, "COMPLETE"),
+    (7, datetime(2013, 7, 25, 0, 0), 4530, "COMPLETE"),
+    (8, datetime(2013, 7, 25, 0, 0), 2911, "PROCESSING"),
+    (9, datetime(2013, 7, 25, 0, 0), 5657, "PENDING_PAYMENT"),
+    (10, datetime(2013, 7, 25, 0, 0), 5648, "PENDING_PAYMENT"),
+    (11, datetime(2013, 7, 25, 0, 0), 918, "PAYMENT_REVIEW"),
+    (12, datetime(2013, 7, 25, 0, 0), 1837, "CLOSED"),
+    (13, datetime(2013, 7, 25, 0, 0), 9149, "PENDING_PAYMENT"),
+    (14, datetime(2013, 7, 25, 0, 0), 9842, "PROCESSING"),
+    (15, datetime(2013, 7, 25, 0, 0), 2568, "COMPLETE"),
+    (16, datetime(2013, 7, 25, 0, 0), 7276, "PENDING_PAYMENT"),
+    (17, datetime(2013, 7, 25, 0, 0), 2667, "COMPLETE"),
+    (18, datetime(2013, 7, 25, 0, 0), 1205, "CLOSED"),
+    (19, datetime(2013, 7, 25, 0, 0), 9488, "PENDING_PAYMENT"),
+    (20, datetime(2013, 7, 25, 0, 0), 9198, "PROCESSING")
+]
+
+# Create DataFrame
+orders_df = spark.createDataFrame(data, schema)
+
+# Show data and schema
+orders_df.show()
+orders_df.printSchema()
+
+# Register as temp view for SQL
+orders_df.createOrReplaceTempView("orders")
+
+
+
+
+
+📌 Standard DataFrame Creation from File Location
+
+🔹 Load data from a path (e.g., CSV, Parquet, etc.):
+orders_df = spark.read.csv("path/to/orders.csv", header=True, inferSchema=True)
+
+🔹 Show data:
+orders_df.show()
+
+🔹 Print schema:
+orders_df.printSchema()
+
+🔹 Create temp view for SQL usage:
+orders_df.createOrReplaceTempView("orders")
+
+
+
+
+
+
+📌 Top 15 Customers with Most Orders
+
+Using DataFrame:
+result = orders_df.groupBy("customer_id").count().sort("count", ascending=False).limit(15)
+result.show()
+
+Using Spark SQL:
+result = spark.sql("""
+    SELECT customer_id, COUNT(order_id) AS count
+    FROM orders
+    GROUP BY customer_id
+    ORDER BY count DESC
+""")
+result.show()
+
+| customer_id | count |
+|-------------|-------|
+| 256         | 1     |
+| 918         | 1     |
+| 1205        | 1     |
+| 12111       | 1     |
+| 11318       | 1     |
+| 11599       | 1     |
+| 2911        | 1     |
+| 2568        | 1     |
+| 4530        | 1     |
+| 5648        | 1     |
+| 5657        | 1     |
+| 7130        | 1     |
+| 7276        | 1     |
+| 8827        | 1     |
+| 9149        | 1     |
+
+
+
+
+
+
+
+
+
+📌 Number of Orders per Order Status
+
+Using DataFrame:
+result = orders_df.groupBy("order_status").count()
+result.show()
+
+Using Spark SQL:
+result = spark.sql("""
+    SELECT order_status, COUNT(order_id) AS count
+    FROM orders
+    GROUP BY order_status
+""")
+result.show()
+
+| order_status     | count |
+|------------------|-------|
+| CLOSED           | 4     |
+| COMPLETE         | 6     |
+| PROCESSING       | 3     |
+| PENDING_PAYMENT  | 6     |
+| PAYMENT_REVIEW   | 1     |
+
+
+
+
+
+
+
+
+📌 Number of Active Customers (Placed at Least One Order)
+
+Using DataFrame:
+result = orders_df.select("customer_id").distinct().count()
+print(result)
+
+Using Spark SQL:
+spark.sql("""
+    SELECT COUNT(DISTINCT customer_id) AS active_customers
+    FROM orders
+""").show()
+
+print(result)  # Output: 20
+
+Using DataFrame:
+result = orders_df.select("customer_id").distinct().count()
+print(result)  # result is a number, not a DataFrame
+
+🔸 Explanation:
+- count() without groupBy returns a plain value (not a DataFrame), so:
+  - result.show() ❌ will throw an error
+  - print(result) ✅ works correctly
+- count() in this case is an **action**, not a transformation
+
+
+
+
+
+
+📌 Customer with Most Closed Orders
+
+Using DataFrame:
+result = orders_df.filter("order_status = 'CLOSED'") \
+                  .groupBy("customer_id") \
+                  .count() \
+                  .sort("count", ascending=False)
+result.show()
+
+Using Spark SQL:
+spark.sql("""
+    SELECT customer_id, COUNT(order_id) AS count
+    FROM orders
+    WHERE order_status = 'CLOSED'
+    GROUP BY customer_id
+    ORDER BY count DESC
+""").show()
+
+| customer_id | count |
+|-------------|-------|
+| 11599       | 1     |
+| 8827        | 1     |
+| 1837        | 1     |
+| 1205        | 1     |
+
+
+
+
+
+
+📌 Actions vs Transformations in Spark
+
+🔹 Transformations (lazy):
+- groupBy()                → Groups data but doesn't execute
+- groupBy().count()        → Still a transformation
+- orderBy()                → Rearranges rows, lazy
+- filter()                 → Filters rows based on condition
+- join()                   → Combines data from two DataFrames
+- distinct()               → Removes duplicate rows
+
+🔹 Actions (trigger execution):
+- show()                   → Displays DataFrame contents
+- count()                  → Returns number of rows
+- collect()                → Brings data to driver
+- head()                   → Returns first n rows
+- tail()                   → Returns last n rows
+- take(n)                  → Returns first n rows as list
+
+🔹 Utility Functions:
+- printSchema()            → Displays structure of DataFrame
+- cache()                  → Marks DataFrame for caching
+- createOrReplaceTempView() → Registers a temporary view for SQL
+
+
+
+
+
+
+
+
+
+
+
+
