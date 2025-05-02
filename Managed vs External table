@@ -1,0 +1,55 @@
+📌 Spark SQL – Managed Tables vs External Tables
+
+🔹 Ownership
+- Managed Table: Spark owns both metadata and data
+- External Table: Spark owns only the metadata; data is stored externally
+
+🔹 Drop Behavior
+- Managed Table: Dropping deletes both metadata and data
+- External Table: Dropping deletes only metadata; data remains untouched
+
+🔹 External Table Storage
+External tables store data in external systems such as:
+- S3 (Amazon Simple Storage Service)
+- ADLS (Azure Data Lake Storage)
+- HDFS (Hadoop Distributed File System)
+- Local/Network file paths
+
+🔹 Create Table
+
+-- Managed Table
+spark.sql("""
+    CREATE TABLE IF NOT EXISTS employees (
+        id INT,
+        name STRING,
+        department STRING
+    )
+""")
+
+-- External Table (CSV from ADLS or S3)
+spark.sql("""
+    CREATE TABLE IF NOT EXISTS ext_employees (
+        id INT,
+        name STRING,
+        department STRING
+    )
+    USING CSV
+    OPTIONS (path "abfss://data@storageaccount.dfs.core.windows.net/employees", header "true", inferSchema "true")
+""")
+
+🔹 Drop Table
+
+-- Managed Table
+spark.sql("DROP TABLE IF EXISTS employees")
+
+-- External Table
+spark.sql("DROP TABLE IF EXISTS ext_employees")
+
+🔹 DML Support
+
+Operation       | Managed Table | External Table (Open-Source) | External Table (Databricks)
+----------------|----------------|------------------------------|------------------------------
+INSERT          | ✅ Works        | ✅ Works                     | ✅ Works
+UPDATE          | ❌ Not Supported| ❌ Not Supported             | ✅ Works
+DELETE          | ❌ Not Supported| ❌ Not Supported             | ✅ Works
+SELECT          | ✅ Works        | ✅ Works                     | ✅ Works
