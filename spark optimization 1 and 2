@@ -1,0 +1,58 @@
+spark optimization -session 1 
+==========================
+performance tunning..
+1.application code level optimization 
+cache , use by reducebykey isntead of groupbykey 
+2) cluster level optimation 
+  containers/excecutor
+
+spark optimization -session 2
+==============================
+resources-memory (ram),cpu cores(computes)
+our intention is to make sure our job should get the righyt amout of resource 
+
+ we have 10 node cluster (10 worker noedes) 
+ each node has 16 cpu cores  and eahc node has 64 gb ram  
+
+
+
+executor( it is like cotainer of resouces ) 
+1 node can hold more than one executor  
+in a single worker nopde we can have multiple executore( mutliple  container) 
+
+container --cpu cores +ram memory
+
+each node si 16 cores +64 gb ram  (1 cores is alloted for the background processses) 
+
+
+there are 2 strategies when creating containers 
+1. thin executor ---intention is to create more executor with each executor
+                    holding min possible resuces
+                 total 16 executors,with each executor holding 1 core,4gb  (divided by 16 to main) 
+ 
+draback
+========
+1)in this senarious we will be loosing benefits of multireading bcz of single core
+2) a lot of copies of broadcast variable are required ..
+each executior should recives its own copy
+
+
+2.fat executor
+===============
+intension is to give max resouces to each executors 
+each machines hold ---16 cores +64 gb 
+you can  create a executor which can hold 16 cpu cores and 64 gb ram
+
+drabacks
+==========
+1)it is observes that the excutor holds more than 5 cpu cores then the hdfs throughput suffers 
+2)garbge collection means removing unused objects from the memory and it takes lot time  
+garbage collextion takes more time cuz it hold more memeory 
+
+
+
+ 
+
+
+
+
