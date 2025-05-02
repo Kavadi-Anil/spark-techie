@@ -1,0 +1,57 @@
+📌 Handling Inconsistent Date Formats in Spark
+
+🔹 Problem:
+You have two datasets with different date formats:
+- Dataset A: yyyy-MM-dd
+- Dataset B: MM-dd-yyyy
+
+Spark expects a consistent format (usually yyyy-MM-dd). If the format is mismatched, it throws an error while reading.
+
+============================================================
+
+📌 Option 1: Specify the date format during read
+
+Use the `dateFormat` option in the DataFrame reader:
+
+df = spark.read \
+    .format("csv") \
+    .schema(order_schema) \
+    .option("dateFormat", "MM-dd-yyyy") \
+    .load("location")
+
+============================================================
+
+📌 Option 2: Read date column as string and convert later
+
+Define the schema with `order_date` as string:
+
+order_schema = "order_id LONG, order_date STRING, cust_id LONG, order_status STRING"
+
+df = spark.read \
+    .format("csv") \
+    .schema(order_schema) \
+    .load("location")
+
+Then convert the column using `to_date`:
+
+from pyspark.sql.functions import to_date
+
+# Option A: Create a new column
+new_df = df.withColumn("order_date_new", to_date("order_date", "MM-dd-yyyy"))
+new_df.show()
+
+# Option B: Overwrite the existing column
+new_df = df.withColumn("order_date", to_date("order_date", "MM-dd-yyyy"))
+new_df.show()
+
+============================================================
+
+📌 Notes:
+- If the date format is incorrect (e.g., "yyyy-dd-MMM"), Spark will return null for those rows.
+- If a column has mixed types (e.g., some strings, some integers), and the inferred schema expects all to be integers, the string values will be returned as null.
+
+============================================================
+
+📌 Example Schema Definition:
+
+order_schema = "order_id LONG, order_date DATE, cust_id LONG, order_status STRING"
