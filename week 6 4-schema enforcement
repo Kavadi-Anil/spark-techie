@@ -1,0 +1,72 @@
+📌 Week 6 – Schema Enforcement in Spark
+
+🔹 Inferring Schema
+
+- By default, Spark infers schema when reading data using `.read`.
+- Inferring is not recommended for large datasets due to:
+  - Risk of wrong data types (e.g., date inferred as string)
+  - Performance overhead (Spark scans entire files)
+
+🔹 Example of Inferring Schema (not ideal):
+df = spark.read \
+    .format("csv") \
+    .option("inferSchema", True) \
+    .load("location")
+
+🔹 SamplingRatio Option:
+.option("samplingRatio", 1.0)   # scans 100% of data
+.option("samplingRatio", 0.1)   # scans 10% of data
+.option("samplingRatio", 0.01)  # scans 1% of data
+
+🔹 Without inferSchema:
+df = spark.read \
+    .format("csv") \
+    .load("location")
+
+# All columns will be treated as strings
+
+============================================================
+
+📌 Enforcing Schema (Recommended Approach)
+
+Use one of the two methods below to define schema explicitly:
+
+🔹 1. Define Schema as String:
+
+order_schema = "order_id LONG, order_date DATE, cust_id LONG, order_status STRING"
+
+df = spark.read \
+    .format("csv") \
+    .schema(order_schema) \
+    .load("location")
+
+df.show()
+df.printSchema()
+
+# If there's a mismatch, Spark inserts null in that column
+
+🔹 2. Define Schema using StructType:
+
+from pyspark.sql.types import StructType, StructField, LongType, DateType, StringType
+
+order_schema_struct = StructType([
+    StructField("order_id", LongType(), True),
+    StructField("order_date", DateType(), True),
+    StructField("cust_id", LongType(), True),
+    StructField("order_status", StringType(), True)
+])
+
+df = spark.read \
+    .format("csv") \
+    .schema(order_schema_struct) \
+    .load("location")
+
+df.show()
+df.printSchema()
+
+============================================================
+
+📌 Summary:
+- ❌ Avoid using inferSchema on big data
+- ✅ Use schema enforcement (String or StructType)
+- ✅ Ensures better performance, correct data types, and stable processing
